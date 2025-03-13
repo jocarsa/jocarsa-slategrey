@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Monitor</title>
+  <link rel="stylesheet" href="css/estilo.css">
+  <style>
+    body { margin: 8px; font-family: sans-serif; }
+    #previewCanvas { border: 1px solid #999; display: block; margin-bottom: 8px; }
+    #playbackControls button { margin-right: 4px; }
+    #renderModal {
+      position: fixed; top:0; left:0; right:0; bottom:0;
+      background: rgba(0,0,0,0.5);
+      display: none; align-items: center; justify-content: center;
+    }
+    #renderModalContent {
+      background: #fff; padding: 20px; border-radius: 8px; text-align: center;
+    }
+    progress { width: 300px; height: 20px; }
+  </style>
+</head>
+<body>
+
+<h1>Monitor Window</h1>
+
+<canvas id="previewCanvas" width="640" height="360"></canvas>
+
+<div id="playbackControls">
+  <button id="btnRewind">Rewind</button>
+  <button id="btnBack25">-25f</button>
+  <button id="btnBack1">-1f</button>
+  <button id="btnPlay">Play</button>
+  <button id="btnPause">Pause</button>
+  <button id="btnFwd1">+1f</button>
+  <button id="btnFwd25">+25f</button>
+  <button id="btnLastFrame">Last</button>
+</div>
+
+<button id="renderButton">Render &amp; Download</button>
+
+<!-- A modal to show rendering progress -->
+<div id="renderModal">
+  <div id="renderModalContent">
+    <h3>Rendering...</h3>
+    <progress id="renderProgress" value="0" max="100"></progress>
+  </div>
+</div>
+
+<script>
+// Canvas + contexto
+const previewCanvas   = document.getElementById('previewCanvas');
+const ctx             = previewCanvas.getContext('2d');
+
+// Elementos del modal de renderizado
+const renderButton    = document.getElementById('renderButton');
+const renderModal     = document.getElementById('renderModal');
+const renderProgress  = document.getElementById('renderProgress');
+
+// Controles de reproducción
+document.getElementById('btnRewind').addEventListener('click', () => setPreviewTime(0));
+document.getElementById('btnBack25').addEventListener('click', () => stepFrames(-25));
+document.getElementById('btnBack1').addEventListener('click', () => stepFrames(-1));
+document.getElementById('btnPlay').addEventListener('click', () => {
+  isPlaying = true;
+  previewLastTimestamp = null;
+  requestAnimationFrame(playbackLoop);
+});
+document.getElementById('btnPause').addEventListener('click', () => { isPlaying = false; });
+document.getElementById('btnFwd1').addEventListener('click', () => stepFrames(1));
+document.getElementById('btnFwd25').addEventListener('click', () => stepFrames(25));
+document.getElementById('btnLastFrame').addEventListener('click', () => {
+  let end = getTimelineMaxTime();
+  setPreviewTime(end);
+});
+
+renderButton.addEventListener('click', () => {
+  let endTime = getTimelineMaxTime();
+  if (endTime < 0.01) {
+    alert("No clips to render!");
+    return;
+  }
+  doRender(endTime);
+});
+
+let channel;
+
+function initializeChannel() {
+  channel = new BroadcastChannel('myVideoEditorChannel');
+
+  channel.onmessage = function(e) {
+    const msg = e.data;
+    switch(msg.type) {
+      case 'fullState':
+        if (msg.currentTime != null) {
+          currentPreviewTime = msg.currentTime;
+          updateClipsFromParent();
+          updatePreviewUI();
+        }
+        break;
+      case 'timeChanged':
+        currentPreviewTime = msg.currentTime;
+        updatePreviewUI();
+        break;
+    }
+  };
+}
+
+initializeChannel();
+
+// Actualiza los arrays de clips desde la ventana padre
+let clipsVideo1 = [];
+let clipsVideo2 = [];
+let clipsAudio  = [];
+function updateClipsFromParent() {
+  if(window.opener) {
+    clipsVideo1 = window.opener.clipsVideo1;
+    clipsVideo2 = window.opener.clipsVideo2;
+    clipsAudio  = window.opener.clipsAudio;
+  }
+}
+updateClipsFromParent();
+
+let currentPreviewTime = 0;
+let isPlaying   = false;
+let previewLastTimestamp = 0;
+const FPS       = 30;
+const PIXELS_PER_SECOND = 50;
+
+function getTimelineMaxTime() {
+  let maxT = 0;
+  function check(arr){
+    for (let c of arr){
+      let end = c.startTime + c.duration;
+      if (end > maxT) maxT = end;
+    }
+  }
+  check(clipsVideo1);
+  check(clipsVideo2);
+  check(clipsAudio);
+  return maxT;
+}
+
+function updatePreviewUI() {
+  updatePreviewAtTime(currentPreviewTime);
+}
+
+function updatePreviewAtTime(t) {
+  ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+  drawClipsAtTime(clipsVideo1, t);
+  drawClipsAtTime(clipsVideo2, t);
+}
+
+function drawClipsAtTime(clipArray, timeSec){
+  for (let clip of clipArray) {
+    let start = clip.startTime;
+    let end   = clip.startTime + clip.duration;
+    if (timeSec >= start && timeSec < end) {
+      if (clip.img) {
+        let iw = clip.img.width;
+        let ih = clip.img.height;
+        let cw = previewCanvas.width;
+        let ch = previewCanvas.height;
+        let centerX = cw / 2;
+        let centerY = ch / 2;
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.translate(clip.posX || 0, clip.posY || 0);
+        ctx.rotate((clip.rotation||0) * Math.PI / 180);
+        ctx.scale((clip.scale||1), (clip.scale||1));
+        ctx.drawImage(clip.img, -iw/2, -ih/2);
+        ctx.restore();
+      } else if (clip.video) {
+        let localTime = timeSec - clip.startTime;
+        localTime = Math.max(0, Math.min(localTime, clip.video.duration||999999));
+        try {
+          clip.video.currentTime = localTime;
+        } catch(e){}
+        if (clip.video.videoWidth > 0 && clip.video.videoHeight > 0) {
+          let vw = clip.video.videoWidth;
+          let vh = clip.video.videoHeight;
+          let cw = previewCanvas.width;
+          let ch = previewCanvas.height;
+          let centerX = cw/2;
+          let centerY = ch/2;
+          ctx.save();
+          ctx.translate(centerX, centerY);
+          ctx.translate(clip.posX || 0, clip.posY || 0);
+          ctx.rotate((clip.rotation||0) * Math.PI / 180);
+          ctx.scale((clip.scale||1), (clip.scale||1));
+          ctx.drawImage(clip.video, -vw/2, -vh/2);
+          ctx.restore();
+        }
+      }
+    }
+  }
+}
+
+function playbackLoop(timestamp) {
+  if(!isPlaying) return;
+  if(!previewLastTimestamp) previewLastTimestamp = timestamp;
+  let dt = (timestamp - previewLastTimestamp) / 1000;
+  previewLastTimestamp = timestamp;
+  currentPreviewTime += dt;
+  let end = getTimelineMaxTime();
+  if (currentPreviewTime > end) {
+    currentPreviewTime = end;
+    isPlaying = false;
+  }
+  updatePreviewUI();
+  requestAnimationFrame(playbackLoop);
+  channel.postMessage({ type:'timeChanged', currentTime: currentPreviewTime });
+}
+
+function setPreviewTime(t) {
+  currentPreviewTime = t;
+  isPlaying = false;
+  updatePreviewUI();
+  channel.postMessage({ type:'timeChanged', currentTime: currentPreviewTime });
+}
+
+function stepFrames(numFrames) {
+  let dt = numFrames / FPS;
+  let newTime = currentPreviewTime + dt;
+  newTime = Math.max(0, Math.min(newTime, getTimelineMaxTime()));
+  setPreviewTime(newTime);
+}
+
+async function doRender(totalTime){
+  renderModal.style.display = 'flex';
+  renderProgress.value = 0;
+  let audioCtx = new AudioContext();
+  let audioDest = audioCtx.createMediaStreamDestination();
+  if (window.opener && window.opener.scheduleAllAudio) {
+    window.opener.scheduleAllAudio(audioCtx, audioDest, totalTime);
+  } else {
+    for (let c of clipsAudio) {
+      if(!c.audioBuffer) continue;
+      let source = audioCtx.createBufferSource();
+      source.buffer = c.audioBuffer;
+      source.start(audioCtx.currentTime + c.startTime, 0, c.duration);
+      source.connect(audioCtx.destination);
+      source.connect(audioDest);
+    }
+  }
+  let canvasStream = previewCanvas.captureStream(FPS);
+  let combinedStream = new MediaStream([
+    ...canvasStream.getVideoTracks(),
+    ...audioDest.stream.getAudioTracks()
+  ]);
+  let recorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm; codecs=vp9' });
+  let chunks = [];
+  recorder.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
+  recorder.onstop = () => {
+    let blob = new Blob(chunks, { type:'video/webm' });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = 'rendered_with_audio.webm';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    renderModal.style.display = 'none';
+    audioCtx.close();
+  };
+  recorder.start();
+  audioCtx.resume();
+  let startTime = audioCtx.currentTime;
+  function renderFrameLoop() {
+    let now = audioCtx.currentTime;
+    let elapsed = now - startTime;
+    if(elapsed >= totalTime) {
+      recorder.stop();
+      return;
+    }
+    updatePreviewAtTime(elapsed);
+    let progressPct = (elapsed / totalTime) * 100;
+    renderProgress.value = Math.round(progressPct);
+    requestAnimationFrame(renderFrameLoop);
+  }
+  renderFrameLoop();
+}
+</script>
+
+</body>
+</html>
+

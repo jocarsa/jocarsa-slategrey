@@ -2,78 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Browser Video Editor (2 Video Tracks + 1 Audio Track)</title>
+  <title>Main Timeline</title>
   <link rel="stylesheet" href="css/estilo.css">
 </head>
 <body>
-<h1><img src="slategrey.png">jocarsa | slategrey</h1>
+
+<h1>jocarsa | slategrey</h1>
 
 <div id="container">
 
-  <!-- ===== TOP PANEL ===== -->
-  <div id="topPanel">
+  <!-- TOP BAR with open-window buttons + timeline info -->
+  <div id="topPanelSingleRow">
+    <button id="btnOpenMonitor">Open Monitor</button>
+    <button id="btnOpenParams">Open Parameters</button>
 
-    <!-- Left side: PREVIEW + PLAYBACK CONTROLS + RENDER BUTTON -->
-    <div id="previewContainer">
-      <canvas id="previewCanvas" width="640" height="360"></canvas>
-
-      <!-- Playback Controls -->
-      <div id="playbackControls">
-        <button id="btnRewind">Rewind</button>
-        <button id="btnBack25">-25f</button>
-        <button id="btnBack1">-1f</button>
-        <button id="btnPlay">Play</button>
-        <button id="btnPause">Pause</button>
-        <button id="btnFwd1">+1f</button>
-        <button id="btnFwd25">+25f</button>
-        <button id="btnLastFrame">Last</button>
-      </div>
-
-      <button id="renderButton">Render &amp; Download (Video + Audio)</button>
-    </div>
-
-    <!-- Right side: PROPERTIES PANEL -->
-    <div id="propertiesPanel">
-      <h2>Properties</h2>
-
-      <!-- If no clip is selected, show this text -->
-      <div id="noSelection">No clip selected</div>
-
-      <!-- For video/image clips -->
-      <div id="videoProps" style="display:none;">
-        <label>Position X:
-          <input type="number" step="1" id="propPosX">
-        </label>
-        <label>Position Y:
-          <input type="number" step="1" id="propPosY">
-        </label>
-        <label>Rotation (°):
-          <input type="number" step="1" id="propRotation">
-        </label>
-        <label>Scale:
-          <input type="number" step="0.1" id="propScale">
-        </label>
-      </div>
-
-      <!-- For audio clips -->
-      <div id="audioProps" style="display:none;">
-        <label>Volume:
-          <input type="range" id="propVolume" min="0" max="1" step="0.01" value="1">
-        </label>
-        <label>Panning:
-          <input type="range" id="propPanning" min="-1" max="1" step="0.01" value="0">
-        </label>
-      </div>
+    <div style="margin-left: 20px;">
+      <strong>Current Time:</strong>
+      <span id="timeDisplay">0.00</span> s
     </div>
   </div>
-  <!-- ===== END TOP PANEL ===== -->
 
-  <!-- ===== BOTTOM PANEL: TIMELINE ===== -->
+  <!-- BOTTOM PANEL: Timeline UI (same as before) -->
   <div id="bottomPanel">
+    <!-- Time scale (ruler) -->
     <div id="timeScale"></div>
 
     <div id="tracksContainer">
+      <!-- The main time cursor (red line) -->
       <div id="timeCursor" class="time-cursor"></div>
+      <!-- A ghost cursor (unused here, but kept for consistency) -->
       <div id="ghostCursor" class="time-cursor ghost-cursor" style="display:none;"></div>
 
       <!-- VIDEO TRACK #1 -->
@@ -106,15 +63,36 @@
   </div>
 </div>
 
-<!-- RENDERING MODAL -->
-<div id="renderModal">
-  <div id="renderModalContent">
-    <h3>Rendering...</h3>
-    <progress id="renderProgress" value="0" max="100"></progress>
-  </div>
-</div>
-
+<!-- We rely on the same JS partials for timeline logic. -->
 <script src="js/codigo.php"></script>
+
+<script>
+  // En este setup de múltiples ventanas, la fuente de verdad es el timeline.
+  let monitorWin = null;
+  let paramsWin  = null;
+
+  // Se abren las ventanas hijas sin retardo fijo; cada una solicitará el estado inicial.
+  document.getElementById('btnOpenMonitor').addEventListener('click', () => {
+    if (!monitorWin || monitorWin.closed) {
+      monitorWin = window.open('monitor.html', 'monitorWin', 'width=800,height=600');
+    } else {
+      monitorWin.focus();
+    }
+  });
+
+  document.getElementById('btnOpenParams').addEventListener('click', () => {
+    if (!paramsWin || paramsWin.closed) {
+      paramsWin = window.open('parameters.html', 'paramsWin', 'width=400,height=600');
+    } else {
+      paramsWin.focus();
+    }
+  });
+
+  /** Actualiza la visualización del “current time” en la ventana principal. */
+  function updateTimeDisplay() {
+    document.getElementById('timeDisplay').textContent = currentPreviewTime.toFixed(2);
+  }
+</script>
 
 </body>
 </html>

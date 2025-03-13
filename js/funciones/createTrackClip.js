@@ -101,7 +101,6 @@ function createTrackClip(file, trackType){
 
   // Mouse-based dragging/resizing
   clipObj.element.addEventListener('mousedown', e => {
-    // If user clicked a handle, that means resizing, so skip
     if(e.target.classList.contains('handle')) return;
     startClipMove(e, clipObj);
   });
@@ -110,9 +109,12 @@ function createTrackClip(file, trackType){
   leftHandle.addEventListener('mousedown', e => startHandleResize(e, clipObj, 'left'));
   rightHandle.addEventListener('mousedown', e => startHandleResize(e, clipObj, 'right'));
 
-  // ===== NEW: click => select this clip =====
+  // Click => select this clip
   clipObj.element.addEventListener('click', () => {
     selectClip(clipObj);
   });
+
+  // === NEW: broadcast so the Monitor/Params know a new clip was added
+  broadcastFullState();
 }
 

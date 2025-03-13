@@ -1,241 +1,304 @@
-@import url('https://static.jocarsa.com/fuentes/ubuntu-font-family-0.83/ubuntu.css');
-
-body {
+/* === RESET Y VARIABLES BASE === */
+* {
   margin: 0;
-  font-family: Ubuntu, sans-serif;
-  overflow: hidden;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-h1 {
-  text-align: center;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  justify-content: center;
-  align-items: center;
-  align-content: stretch;
-}
-h1 img {
-  width:60px;
-  margin-right:10px;
+:root {
+  /* Colores base */
+  --background-color: #2F4F4F;     /* Fondo general: Dark Slate Gray */
+  --panel-bg: #3a4b52;             /* Fondos de paneles y secciones */
+  --text-color: #e0e0e0;           /* Texto claro */
+  --border-color: #708090;         /* Borde en slate gray */
+  --accent-color: #90a4ae;         /* Acentos y focos */
+  
+  /* Controles y botones */
+  --button-bg: #546e7a;
+  --button-hover-bg: #455a64;
+  
+  --input-bg: #3a4b52;
+  --input-border: #708090;
+  
+  --control-bg: #455a64;
+  
+  /* Fuente principal */
+  --font-family: 'Ubuntu', sans-serif;
 }
 
-/* The main container for the entire layout */
+/* === ESTILOS GLOBALES === */
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: var(--font-family);
+  line-height: 1.5;
+  padding: 1em;
+}
+
+/* Encabezados */
+h1, h2, h3 {
+  color: var(--text-color);
+  margin-bottom: 0.5em;
+}
+
+/* === BOTONES === */
+button {
+  background-color: var(--button-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  padding: 0.5em 1em;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-size: 1em;
+}
+button:hover {
+  background-color: var(--button-hover-bg);
+}
+button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+/* === INPUTS, TEXTAREAS, SELECTS === */
+input,
+textarea,
+select {
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  padding: 0.5em;
+  font-size: 1em;
+  transition: border-color 0.2s ease;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+/* Enlaces */
+a {
+  color: var(--accent-color);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* === CONTENEDORES Y PANELES === */
+.container {
+  padding: 1em;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  margin: 1em 0;
+}
+
+/* === ESTILOS PARA LA VENTANA PRINCIPAL (TIMELINE) === */
 #container {
   display: flex;
-  flex-direction: column; /* top panel above, timeline below */
-  height: 100vh;
-}
-
-/* === TOP PANEL: Now horizontal layout (Preview left, Properties right) === */
-#topPanel {
-  flex: 0 0 auto;
-  padding: 10px;
-  border-bottom: 1px solid #ccc;
-  display: flex;
-  flex-direction: row;  /* side by side */
-  align-items: flex-start;
-  justify-content: space-between;
-}
-
-/* Left side: preview and controls */
-#previewContainer {
-  display: flex;
   flex-direction: column;
+  height: 100vh;
+  background-color: var(--background-color);
+}
+#topPanelSingleRow {
+  display: flex;
   align-items: center;
-  justify-content: flex-start;
-  margin-right: 20px;
+  padding: 0.8em;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--panel-bg);
 }
-
-/* The properties panel on the right side */
-#propertiesPanel {
-  width: 300px;
-  min-height: 360px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 10px;
-  background: #f9f9f9;
+#topPanelSingleRow button {
+  margin-right: 0.5em;
 }
-
-/* Simple styling for property labels & inputs */
-#propertiesPanel label {
-  display: block;
-  margin-bottom: 8px;
-}
-
-/* If no clip is selected */
-#noSelection {
-  color: #555;
-  font-style: italic;
-}
-
-/* Preview canvas */
-#previewCanvas {
-  border: 1px solid #ccc;
-  margin-bottom: 10px;
-}
-
-/* Playback controls */
-#playbackControls {
-  margin-bottom: 10px;
-}
-#playbackControls button {
-  margin-right: 5px;
-}
-#renderButton {
-  margin-top: 5px;
-  padding: 8px 16px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-/* === BOTTOM PANEL: TIMELINE === */
 #bottomPanel {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  background-color: var(--background-color);
 }
-
-/* Time scale / top ruler */
 #timeScale {
   position: relative;
   width: 100%;
   height: 40px;
-  border-bottom: 1px solid #bbb;
-  background: #f0f0f0;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--panel-bg);
   cursor: pointer;
   user-select: none;
   flex-shrink: 0;
 }
-
-/* Tracks container (scrollable horizontally) */
 #tracksContainer {
   flex: 1 1 auto;
   position: relative;
   overflow-x: auto;
   overflow-y: hidden;
-  background: #fafafa;
+  background-color: var(--background-color);
+  padding: 1em;
 }
 
-/* Each track row */
+/* Cada fila de pista */
 .trackRow {
-  position: relative;
   display: flex;
-  flex-direction: row;
-  align-items: stretch;
+  align-items: center;
   margin-bottom: 10px;
 }
 .trackLabel {
   width: 30px;
-  flex-shrink: 0;
-  background: #ddd;
-  border: 1px solid #ccc;
+  background-color: var(--control-bg);
+  border: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
   user-select: none;
+  border-radius: 4px;
 }
 .track {
-  position: relative;
-  border: 1px dashed #999;
+  flex: 1;
+  border: 1px dashed var(--border-color);
   height: 60px;
-  flex: 1 1 auto;
-  background: #fff;
+  background-color: var(--panel-bg);
+  margin-left: 0.5em;
+  position: relative;
+  border-radius: 4px;
 }
 
-/* Time cursors (main + ghost) */
+/* Cursor de tiempo */
 .time-cursor {
   position: absolute;
-  top: 0; 
+  top: 0;
   bottom: 0;
   width: 2px;
-  background: red;
+  background-color: var(--accent-color);
   pointer-events: none;
   z-index: 999;
 }
 .ghost-cursor {
-  background: rgba(255,0,0,0.5);
+  background-color: rgba(144,164,174,0.5);
 }
 
-/* Clip boxes */
+/* Clips (video, imagen y audio) */
 .clip {
   position: absolute;
   height: 100%;
-  border: 1px solid #666;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   cursor: grab;
   user-select: none;
   overflow: hidden;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background-size: cover;
   background-position: center;
+  transition: box-shadow 0.2s ease;
 }
-
-/* Highlight if selected */
+.clip:hover {
+  box-shadow: 0 0 5px 2px var(--accent-color);
+}
 .clip-selected {
-  outline: 3px solid #4af; /* highlight color */
+  outline: 3px solid var(--accent-color);
 }
 
-/* Audio clips get a mini waveform canvas */
+/* Estilo específico para clips de audio */
 .audio-clip {
-  background: linear-gradient(45deg, #f5dfa7, #ffdcb6);
+  background: linear-gradient(45deg, #5a6d78, #708090);
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  position: relative;
 }
+
+/* Etiqueta de clip */
 .clip-label {
   position: relative;
   z-index: 2;
-  background: rgba(255,255,255,0.7);
+  background: rgba(0, 0, 0, 0.5);
   padding: 0 5px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 0.9em;
   pointer-events: none;
   white-space: nowrap;
 }
+
+/* Canvas de waveform en clips de audio */
 .waveform {
   position: absolute;
   left: 0; top: 0; bottom: 0; right: 0;
   z-index: 1;
 }
 
-/* Left/right handles for resizing */
+/* Handles para redimensionar clips */
 .handle {
   position: absolute;
   top: 0;
   width: 8px;
   height: 100%;
   cursor: ew-resize;
-  background: rgba(0,0,0,0.2);
+  background-color: var(--border-color);
+  opacity: 0.8;
   z-index: 3;
 }
 .handle.left { left: 0; }
 .handle.right { right: 0; }
 
-/* Render modal */
+/* === ESTILOS PARA LA VENTANA DE MONITOR === */
+#previewCanvas {
+  border: 1px solid var(--border-color);
+  display: block;
+  margin-bottom: 1em;
+}
+#playbackControls {
+  margin-top: 1em;
+  text-align: center;
+}
+#playbackControls button {
+  margin: 0 0.25em;
+}
+
+/* Modal de renderizado */
 #renderModal {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 9999;
   display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
   align-items: center;
   justify-content: center;
 }
 #renderModalContent {
-  background: #fff;
-  padding: 20px;
+  background-color: var(--panel-bg);
+  padding: 1.5em;
   border-radius: 8px;
   text-align: center;
+  border: 1px solid var(--border-color);
 }
-#renderProgress {
+progress {
   width: 300px;
   height: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--input-bg);
+}
+
+/* === ESTILOS PARA LA VENTANA DE PARÁMETROS === */
+#paramFields {
+  margin-top: 1em;
+  padding: 1em;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+.fieldGroup {
+  margin-bottom: 1em;
+}
+label {
+  display: block;
+  margin-bottom: 0.5em;
+  font-size: 0.9em;
 }
 
