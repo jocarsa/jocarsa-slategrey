@@ -1,23 +1,30 @@
+<?php
 //-----------------------------------------------------------
 // BASIC TIMELINE CONSTANTS
 //-----------------------------------------------------------
+?>
+
 const TIMELINE_WIDTH = 4000;
 const PIXELS_PER_SECOND = 50;
 const DEFAULT_DURATION_VIDEO = 2;
 const DEFAULT_DURATION_AUDIO = 3;
 
-// Our track data (real arrays hold file refs, DOM elements, etc.)
+// Arrays para clips y transiciones
 let clipsVideo1 = [];
 let clipsVideo2 = [];
 let clipsAudio  = [];
 let clipIdCounter = 0;
 
-// >>> Se asignan al objeto global para que puedan ser accedidos desde ventanas hijas <<<
+// NUEVO: Array global de transiciones
+let transitions = [];
+
+// Se asignan al objeto global para que puedan ser accedidos desde ventanas hijas
 window.clipsVideo1 = clipsVideo1;
 window.clipsVideo2 = clipsVideo2;
 window.clipsAudio  = clipsAudio;
+window.transitions = transitions;
 
-// DOM references for the timeline
+// DOM references del timeline
 const trackVideo1El = document.getElementById('trackVideo1');
 const trackVideo2El = document.getElementById('trackVideo2');
 const trackAudioEl  = document.getElementById('trackAudio');
@@ -36,7 +43,7 @@ const timeScaleEl = document.getElementById('timeScale');
 const tracksContainerEl = document.getElementById('tracksContainer');
 
 //-----------------------------------------------------------
-// TIME SCALE + CLICK => Move time cursor
+// TIME SCALE + CLICK => Mueve el cursor de tiempo
 //-----------------------------------------------------------
 timeScaleEl.addEventListener('click', (e) => {
   let rect = timeScaleEl.getBoundingClientRect();
@@ -51,50 +58,39 @@ timeScaleEl.addEventListener('click', (e) => {
 window.addEventListener('resize', drawTimeScale);
 drawTimeScale();
 
-//-----------------------------------------------------------
-// DRAG & DROP => Creates a clip object
-//-----------------------------------------------------------
 <?php include "funciones/handleFileDrop.js";?>
 <?php include "funciones/createTrackClip.js";?>
 
 //-----------------------------------------------------------
-// CLIP MOVING (click+drag on the clip itself)
+// MOVIMIENTO DE CLIPS
 //-----------------------------------------------------------
 let movingClip = null;
 let moveStartMouseX = 0;
 let moveStartLeftPx = 0;
-
 <?php include "funciones/startClipMove.js";?>
 <?php include "funciones/onClipMoveMouseMove.js";?>
 <?php include "funciones/onClipMoveMouseUp.js";?>
 
 //-----------------------------------------------------------
-// CLIP RESIZING (handles on left/right edges)
+// RESIZE DE CLIPS
 //-----------------------------------------------------------
 let resizingClip = null;
 let resizeMode = null;
 let resizeStartMouseX = 0;
 let resizeStartLeftPx = 0;
 let resizeStartWidthPx = 0;
-
 <?php include "funciones/startHandleResize.js";?>
 <?php include "funciones/onHandleResizeMove.js";?>
 <?php include "funciones/onHandleResizeUp.js";?>
 
-//-----------------------------------------------------------
-// HELPER: Return the last "end time" among all clips
-//-----------------------------------------------------------
 <?php include "funciones/getTimelineMaxTime.js";?>
 
-//-----------------------------------------------------------
-// AUDIO DECODING + WAVEFORM
-//-----------------------------------------------------------
 <?php include "funciones/decodeAudioFile.js";?>
 <?php include "funciones/fileToArrayBuffer.js";?>
 <?php include "funciones/drawAudioWaveform.js";?>
 
 //-----------------------------------------------------------
-// SELECT CLIP + PROPERTIES (just highlighting in timeline)
+// SELECCIÓN DE CLIP Y PROPIEDADES
 //-----------------------------------------------------------
 let selectedClip = null;
 
@@ -118,12 +114,12 @@ function broadcastSelection() {
 }
 
 //-----------------------------------------------------------
-// TIMELINE "CURRENT TIME" LOGIC => move red cursor
+// LOGICA DEL "CURRENT TIME" DEL TIMELINE
 //-----------------------------------------------------------
 function setPreviewTime(t) {
   currentPreviewTime = t;
   updateTimeCursor();
-  channel.postMessage({ type:'timeChanged', currentTime: currentPreviewTime });
+  channel.postMessage({ type: 'timeChanged', currentTime: currentPreviewTime });
   if (typeof updateTimeDisplay === 'function') {
     updateTimeDisplay();
   }
@@ -135,13 +131,11 @@ function updateTimeCursor() {
 }
 
 let channel;
-
 function initializeChannel() {
   channel = new BroadcastChannel('myVideoEditorChannel');
-
   channel.onmessage = function(e) {
     const msg = e.data;
-    switch(msg.type) {
+    switch (msg.type) {
       case 'requestInitialState':
         broadcastFullState();
         break;
@@ -156,11 +150,9 @@ function initializeChannel() {
         }
         break;
       default:
-        // Handle other messages if needed
     }
   };
 }
-
 initializeChannel();
 
 function serializeClip(clip) {
@@ -180,12 +172,12 @@ function serializeClip(clip) {
   };
 }
 
-function broadcastFullState(){
+function broadcastFullState() {
   channel.postMessage({
     type: 'fullState',
     clipsVideo1: clipsVideo1.map(serializeClip),
     clipsVideo2: clipsVideo2.map(serializeClip),
-    clipsAudio:  clipsAudio.map(serializeClip),
+    clipsAudio: clipsAudio.map(serializeClip),
     currentTime: currentPreviewTime,
     selectedClipId: (selectedClip ? selectedClip.id : null)
   });
@@ -198,4 +190,5 @@ function updateClipProperty(clipId, property, value) {
   c[property] = value;
   broadcastFullState();
 }
+
 

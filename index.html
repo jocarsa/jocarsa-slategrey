@@ -7,14 +7,18 @@
 </head>
 <body>
 
-<h1>jocarsa | slategrey</h1>
+<h1><img src="slategrey.png" alt="slategrey logo"> jocarsa | slategrey</h1>
 
 <div id="container">
 
-  <!-- TOP BAR with open-window buttons + timeline info -->
+  <!-- TOP BAR con botones para abrir Monitor, Parámetros, Guardar y Cargar -->
   <div id="topPanelSingleRow">
     <button id="btnOpenMonitor">Open Monitor</button>
     <button id="btnOpenParams">Open Parameters</button>
+    <button id="btnSaveProject">Guardar Proyecto</button>
+    <button id="btnLoadProject">Cargar Proyecto</button>
+    <!-- Input oculto para cargar archivo JSON -->
+    <input type="file" id="fileInput" style="display:none;" accept=".json">
 
     <div style="margin-left: 20px;">
       <strong>Current Time:</strong>
@@ -22,17 +26,16 @@
     </div>
   </div>
 
-  <!-- BOTTOM PANEL: Timeline UI (same as before) -->
+  <!-- PANEL DEL TIMELINE -->
   <div id="bottomPanel">
     <!-- Time scale (ruler) -->
     <div id="timeScale"></div>
 
     <div id="tracksContainer">
-      <!-- The main time cursor (red line) -->
+      <!-- Cursor de tiempo -->
       <div id="timeCursor" class="time-cursor"></div>
-      <!-- A ghost cursor (unused here, but kept for consistency) -->
+      <!-- Ghost cursor para render -->
       <div id="ghostCursor" class="time-cursor ghost-cursor" style="display:none;"></div>
-
       <!-- VIDEO TRACK #1 -->
       <div class="trackRow">
         <div class="trackLabel">V1</div>
@@ -41,7 +44,6 @@
              ondrop="handleFileDrop(event, 'video1')">
         </div>
       </div>
-
       <!-- VIDEO TRACK #2 -->
       <div class="trackRow">
         <div class="trackLabel">V2</div>
@@ -50,7 +52,6 @@
              ondrop="handleFileDrop(event, 'video2')">
         </div>
       </div>
-
       <!-- AUDIO TRACK -->
       <div class="trackRow">
         <div class="trackLabel">A</div>
@@ -63,15 +64,76 @@
   </div>
 </div>
 
-<!-- We rely on the same JS partials for timeline logic. -->
+<!-- Panel flotante de Transiciones y Efectos -->
+<div id="transitionsPanel">
+  <h2>Transiciones y Efectos</h2>
+  <!-- Ítem de transición: crossfade -->
+  <div id="transitionItem" draggable="true" data-type="crossfade">
+    Crossfade (1s)
+  </div>
+</div>
+
+<!-- Se incluyen los JS existentes -->
 <script src="js/codigo.php"></script>
+<!-- Se incluye el nuevo script para transiciones -->
+<script src="js/funciones/transitions.js"></script>
 
+<!-- Script para guardar y cargar el proyecto -->
 <script>
-  // En este setup de múltiples ventanas, la fuente de verdad es el timeline.
-  let monitorWin = null;
-  let paramsWin  = null;
+  // Función para guardar el proyecto en un archivo JSON
+  function saveProject() {
+    let project = {
+      clipsVideo1: clipsVideo1.map(serializeClip),
+      clipsVideo2: clipsVideo2.map(serializeClip),
+      clipsAudio: clipsAudio.map(serializeClip),
+      transitions: transitions  // array global de transiciones
+    };
+    let json = JSON.stringify(project, null, 2);
+    let blob = new Blob([json], { type: 'application/json' });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url;
+    a.download = 'project.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
 
-  // Se abren las ventanas hijas sin retardo fijo; cada una solicitará el estado inicial.
+  // Función para cargar el proyecto desde un archivo JSON
+  function loadProjectFromFile(file) {
+    let reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        let project = JSON.parse(e.target.result);
+        // Reiniciamos los arrays actuales
+        clipsVideo1 = project.clipsVideo1 || [];
+        clipsVideo2 = project.clipsVideo2 || [];
+        clipsAudio = project.clipsAudio || [];
+        transitions = project.transitions || [];
+        // Actualizamos la UI: Se remueven las transiciones visuales existentes y se re-renderizan
+        let oldTransitions = document.querySelectorAll('.transition');
+        oldTransitions.forEach(el => el.remove());
+        transitions.forEach(t => renderTransitionOnTimeline(t));
+        broadcastFullState();
+      } catch(err) {
+        alert("Error al cargar el proyecto: " + err);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  document.getElementById('btnSaveProject').addEventListener('click', saveProject);
+  document.getElementById('btnLoadProject').addEventListener('click', function(){
+    document.getElementById('fileInput').click();
+  });
+  document.getElementById('fileInput').addEventListener('change', function(e){
+    let file = e.target.files[0];
+    if(file) loadProjectFromFile(file);
+  });
+
+  // Apertura de ventanas hijas (Monitor y Parameters)
+  let monitorWin = null;
+  let paramsWin = null;
   document.getElementById('btnOpenMonitor').addEventListener('click', () => {
     if (!monitorWin || monitorWin.closed) {
       monitorWin = window.open('monitor.html', 'monitorWin', 'width=800,height=600');
@@ -79,7 +141,6 @@
       monitorWin.focus();
     }
   });
-
   document.getElementById('btnOpenParams').addEventListener('click', () => {
     if (!paramsWin || paramsWin.closed) {
       paramsWin = window.open('parameters.html', 'paramsWin', 'width=400,height=600');
@@ -87,11 +148,6 @@
       paramsWin.focus();
     }
   });
-
-  /** Actualiza la visualización del “current time” en la ventana principal. */
-  function updateTimeDisplay() {
-    document.getElementById('timeDisplay').textContent = currentPreviewTime.toFixed(2);
-  }
 </script>
 
 </body>

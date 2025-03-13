@@ -7,13 +7,13 @@
 
 :root {
   /* Colores base */
-  --background-color: #2F4F4F;     /* Fondo general: Dark Slate Gray */
-  --panel-bg: #3a4b52;             /* Fondos de paneles y secciones */
+  --background-color: #2F4F4F;     /* Fondo general */
+  --panel-bg: #3a4b52;             /* Fondo de paneles */
   --text-color: #e0e0e0;           /* Texto claro */
-  --border-color: #708090;         /* Borde en slate gray */
-  --accent-color: #90a4ae;         /* Acentos y focos */
+  --border-color: #708090;         /* Borde slate gray */
+  --accent-color: #90a4ae;         /* Acento */
   
-  /* Controles y botones */
+  /* Botones y controles */
   --button-bg: #546e7a;
   --button-hover-bg: #455a64;
   
@@ -35,7 +35,6 @@ body {
   padding: 1em;
 }
 
-/* Encabezados */
 h1, h2, h3 {
   color: var(--text-color);
   margin-bottom: 0.5em;
@@ -97,7 +96,7 @@ a:hover {
   margin: 1em 0;
 }
 
-/* === ESTILOS PARA LA VENTANA PRINCIPAL (TIMELINE) === */
+/* === VENTANA PRINCIPAL (TIMELINE) === */
 #container {
   display: flex;
   flex-direction: column;
@@ -226,7 +225,10 @@ a:hover {
 /* Canvas de waveform en clips de audio */
 .waveform {
   position: absolute;
-  left: 0; top: 0; bottom: 0; right: 0;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
   z-index: 1;
 }
 
@@ -244,7 +246,7 @@ a:hover {
 .handle.left { left: 0; }
 .handle.right { right: 0; }
 
-/* === ESTILOS PARA LA VENTANA DE MONITOR === */
+/* === VENTANA DE MONITOR === */
 #previewCanvas {
   border: 1px solid var(--border-color);
   display: block;
@@ -257,8 +259,6 @@ a:hover {
 #playbackControls button {
   margin: 0 0.25em;
 }
-
-/* Modal de renderizado */
 #renderModal {
   display: none;
   position: fixed;
@@ -285,7 +285,7 @@ progress {
   background-color: var(--input-bg);
 }
 
-/* === ESTILOS PARA LA VENTANA DE PARÁMETROS === */
+/* === VENTANA DE PARÁMETROS === */
 #paramFields {
   margin-top: 1em;
   padding: 1em;
@@ -300,5 +300,46 @@ label {
   display: block;
   margin-bottom: 0.5em;
   font-size: 0.9em;
+}
+
+/* === PANEL DE TRANSICIONES Y EFECTOS === */
+#transitionsPanel {
+  position: fixed;
+  right: 10px;
+  top: 150px;
+  width: 250px;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 1em;
+  z-index: 2000;
+}
+#transitionsPanel h2 {
+  font-size: 1.2em;
+  margin-bottom: 0.5em;
+  text-align: center;
+}
+#transitionItem {
+  background-color: var(--button-bg);
+  color: var(--text-color);
+  padding: 0.5em;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: grab;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+#transitionItem:hover {
+  background-color: var(--button-hover-bg);
+}
+
+/* Elementos de transición en el timeline */
+.transition {
+  pointer-events: none;
+  z-index: 1000;
+}
+h1 img{
+width:50px;
 }
 
