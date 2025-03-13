@@ -11,68 +11,75 @@ function createTrackClip(file, trackType){
     startTime,
     duration: defDur,
     element: document.createElement('div'),
+
+    // For audio
     audioBuffer: null,
-    img: null,    // we'll store a preloaded Image for image files
-    video: null   // we'll store an HTMLVideoElement for video files
+    // For images
+    img: null,
+    // For video
+    video: null,
+
+    // Transformation / property defaults
+    posX: 0,
+    posY: 0,
+    rotation: 0, // degrees
+    scale: 1.0,
+
+    // Audio property defaults
+    volume: 1.0,
+    panning: 0
   };
 
-  // Base CSS classes
   clipObj.element.classList.add('clip');
-  if (trackType === 'audio'){
+  if(trackType === 'audio'){
     clipObj.element.classList.add('audio-clip');
   }
 
-  // Position and width in the timeline
+  // Position & width on timeline
   let leftPx = startTime * PIXELS_PER_SECOND;
   let widthPx = defDur * PIXELS_PER_SECOND;
   clipObj.element.style.left = leftPx + 'px';
   clipObj.element.style.width = widthPx + 'px';
 
-  // Inner HTML: resize handles + label
+  // Inner HTML: handles, label
   clipObj.element.innerHTML = `
     <div class="handle left"></div>
     <div class="handle right"></div>
     <div class="clip-label">${file.name}</div>
   `;
 
-  // ---- IMAGE case ----
-  if (file.type.startsWith('image/')) {
+  // IMAGE?
+  if (file.type.startsWith('image/')){
     let fr = new FileReader();
     fr.onload = evt => {
       let i = new Image();
-      i.onload = () => {
-        clipObj.img = i;
-      };
+      i.onload = () => { clipObj.img = i; };
       i.src = evt.target.result;
 
-      // Also set a background image in the timeline clip for visibility
+      // Also set background image in the timeline clip
       clipObj.element.style.backgroundImage = `url('${evt.target.result}')`;
-      clipObj.element.style.backgroundSize  = 'cover';
+      clipObj.element.style.backgroundSize = 'cover';
       clipObj.element.style.backgroundPosition = 'center';
     };
     fr.readAsDataURL(file);
 
-  // ---- VIDEO case (e.g. MP4) ----
-  } else if (file.type.startsWith('video/')) {
-    // Create a hidden <video> element for frame‐by‐frame drawing
+  // VIDEO?
+  } else if (file.type.startsWith('video/')){
     let vid = document.createElement('video');
     vid.preload = 'auto';
     vid.src = URL.createObjectURL(file);
     vid.muted = true;
     vid.playsInline = true;
-
     vid.onloadedmetadata = () => {
-      // Once metadata is available, you can do something with vid.videoWidth/Height if needed
       console.log('Video loaded:', vid.videoWidth, vid.videoHeight);
     };
-
     clipObj.video = vid;
 
-    // Give the clip a dark background or poster so user sees something in the timeline
+    // Give a dark background in timeline
     clipObj.element.style.background = '#444';
   }
 
-  // ---- AUDIO case ----
+  // AUDIO? 
   if (trackType === 'audio'){
     decodeAudioFile(file).then(buffer => {
       clipObj.audioBuffer = buffer;
@@ -80,7 +87,7 @@ function createTrackClip(file, trackType){
     });
   }
 
-  // Insert into the correct track array + append to DOM
+  // Insert into the correct track array
   if(trackType === 'video1'){
     trackVideo1El.appendChild(clipObj.element);
     clipsVideo1.push(clipObj);
@@ -92,16 +99,20 @@ function createTrackClip(file, trackType){
     clipsAudio.push(clipObj);
   }
 
-  // Add mouse listeners for moving/resizing (the same as before)
+  // Mouse-based dragging/resizing
   clipObj.element.addEventListener('mousedown', e => {
-    // If user clicked on a handle, skip to the resize flow
+    // If user clicked a handle, that means resizing, so skip
     if(e.target.classList.contains('handle')) return;
     startClipMove(e, clipObj);
   });
-
   let leftHandle = clipObj.element.querySelector('.handle.left');
   let rightHandle = clipObj.element.querySelector('.handle.right');
   leftHandle.addEventListener('mousedown', e => startHandleResize(e, clipObj, 'left'));
   rightHandle.addEventListener('mousedown', e => startHandleResize(e, clipObj, 'right'));
+
+  // ===== NEW: click => select this clip =====
+  clipObj.element.addEventListener('click', () => {
+    selectClip(clipObj);
+  });
 }
 
