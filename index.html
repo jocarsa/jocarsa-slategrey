@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Browser Video Editor (2 Video Tracks + 1 Audio Track)</title>
+  <link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+<h1><img src="slategrey.png">jocarsa | slategrey</h1>
+<div id="container">
+
+  <!-- TOP PANEL: Preview, playback controls, and Render button -->
+  <div id="topPanel">
+    <canvas id="previewCanvas" width="640" height="360"></canvas>
+
+    <!-- Playback Controls -->
+    <div id="playbackControls">
+      <button id="btnRewind">Rewind</button>
+      <button id="btnBack25">-25f</button>
+      <button id="btnBack1">-1f</button>
+      <button id="btnPlay">Play</button>
+      <button id="btnPause">Pause</button>
+      <button id="btnFwd1">+1f</button>
+      <button id="btnFwd25">+25f</button>
+      <button id="btnLastFrame">Last</button>
+    </div>
+
+    <button id="renderButton">Render &amp; Download (Video + Audio)</button>
+  </div>
+
+  <!-- BOTTOM PANEL: Timeline -->
+  <div id="bottomPanel">
+    <!-- Time scale (ruler) -->
+    <div id="timeScale"></div>
+
+    <div id="tracksContainer">
+      <!-- The main time cursor (red line) -->
+      <div id="timeCursor" class="time-cursor"></div>
+      <!-- A ghost cursor (during render) -->
+      <div id="ghostCursor" class="time-cursor ghost-cursor" style="display:none;"></div>
+
+      <!-- VIDEO TRACK #1 -->
+      <div class="trackRow">
+        <div class="trackLabel">V1</div>
+        <div id="trackVideo1" class="track"
+             ondragover="event.preventDefault();"
+             ondrop="handleFileDrop(event, 'video1')">
+        </div>
+      </div>
+
+      <!-- VIDEO TRACK #2 -->
+      <div class="trackRow">
+        <div class="trackLabel">V2</div>
+        <div id="trackVideo2" class="track"
+             ondragover="event.preventDefault();"
+             ondrop="handleFileDrop(event, 'video2')">
+        </div>
+      </div>
+
+      <!-- AUDIO TRACK -->
+      <div class="trackRow">
+        <div class="trackLabel">A</div>
+        <div id="trackAudio" class="track"
+             ondragover="event.preventDefault();"
+             ondrop="handleFileDrop(event, 'audio')">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for render progress -->
+<div id="renderModal">
+  <div id="renderModalContent">
+    <h3>Rendering...</h3>
+    <progress id="renderProgress" value="0" max="100"></progress>
+  </div>
+</div>
+
+<script src="js/codigo.php"></script>
+</body>
+</html>
+
